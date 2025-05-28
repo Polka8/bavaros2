@@ -1,0 +1,29 @@
+
+utente(id_utente(PK), nome, psw, email, ruolo,creato_il)
+prenotazione(id_prenotazione(PK),data_prenotata,stato,id_utente,data_annullamento,data_creazione,note_aggiuntive,numero_posti) 
+piatto(id_piatto(PK), nome, prezzo, descrizione)  
+menu(id_menu(PK),titolo,data_creazione)
+menu_sezione()
+dettagli_prenotazione(id_dettaglio(PK),fk_prenotazione,fk_piatto,quantità)
+notifica(id_notifica(PK),id_prenotazione,tipo, messaggio, data_notifica, letto)
+BlockedDay(id(PK),blocked_date)
+DisponibilitaGiornaliera(id(PK),data, posti_totali, posti_prenotati, bloccata)
+Menu(id_menu(PK),titolo, is_pubblico, data_creazione)
+MenuSezione(id_sezione(PK),nome_sezione)
+MenuSezioneRel(id_menu_sezione(PK), id_menu,id_sezione)
+MenuItem(id_item(PK),id_menu_sezione,id_piatto)
+
+
+
+
+
+
+prenotazione(id_utente) → Utente(id_utente)
+DettagliPrenotazione(fk_prenotazione) → Prenotazione(id_prenotazione)
+DettagliPrenotazione(fk_piatto) → Piatto(id_piatto)
+notifica(id_prenotazione) → Prenotazione(id_prenotazione) (opzionale, se associata a una prenotazione)
+MenuSezioneRel(id_menu) → Menu(id_menu)
+MenuSezioneRel(id_sezione) → MenuSezione(id_sezione)
+MenuItem(id_menu_sezione) → MenuSezioneRel(id_menu_sezione)
+MenuItem(id_piatto) → Piatto(id_piatto)
+

@@ -1,0 +1,66 @@
+Progetto fullstack ristorante:
+Frontend:angular
+Backend:python
+il progetto è eseguibile interamente tranmite Docker
+Il sito si apre con la pagina principale del titolo,la quale ha al di sotto le recensioni principali, i menù e la possibilità di prenotare
+In fondo alla pagina ci sono o contatti e le informazioni del ristorante(indirizzo ed eventuali certificazioni).A sinistra della pagina,se si clicca su un icona,si apre la sezione del menu,con icone inerenti al login e lo storico prenotazioni.Per prenotare devo essere loggato,dunque se non ho effettuato il login verrò indirizzato alla pagina del login o dell'iscrizione.
+Se effettuo il login come cliente,potrò prenotare solo i posti oppure il menù con i posti e vedere il mio storico delle prenotazioni(una pagina in cui saranno riportare le singole prenotazioni attive e scadute con l'ora specificata e la possibilità di annullare quelle attive)
+Se effettuo il login come admin(proprietario)potrò vedere lo storico delle prenotazioni sotto forma di calendario, vedendo le prenotazioni passate e future,attive  in un calendario che copre mensilità,giorno,settimana,con la possibilità di  bloccare o sbloccare giorni specifici.
+Come admin,avrò anche la possibilità di vedere, sotto forma di newsletter( posta come icona aggiuntiva nel menu laterale)tutte le prenotazioni che sono state annullate.
+Come admin posso anche modificare il  menu
+componente che mi permette di creare ed eliminare piatti
+Pieno controllo dei dati dell'admin(modifica la prenotazione o annulla) 
+      
+
+struttura progetto:
+/bavaros
+|-/frontend
+ |/src
+  |app
+   |-/admin
+    |-/calendario
+    |-/gestione-menu
+    |-/newsletter
+   |-/auth
+    |-/login
+    |-/register
+   |-/profilo
+   |-/core
+    |-/footer
+    |-/navbar
+    |-/not-found
+   |-/environment(è gia di suo un componente)
+   |-/features
+    |-/dashboard
+   |-/home(è già di suo un componente)
+   |-/prenotazioni
+    |-/prenotazioni-con-menu
+    |-/prenotazioni-solo
+    |-/prenota
+    |-/storico
+   |-/shared
+    |-/interceptors
+    |-/guards(contiene admin.guard.spec.ts,admin.guard.ts,auth.guard.spec.ts e auth.guard.ts)
+    |-/services(contiene admin.service.spec.ts,admin.service.ts,auth.service.spec.ts,auth.service.ts,menu.service.spec.ts,menu.service.ts,prenotazioni.service.spec.ts e prenotazioni.service.ts)
+    app.component.html
+    app.component.scss
+    app.routes.ts
+    app.config.ts
+    app.component.ts
+    
+
+git init                           
+git remote add origin https://github.com/Polka8/bavaros.git
+git add .                          
+git commit -m "profilo aggiunto"
+git branch -M main
+git push -u origin main      
+
+
+
+ / <ng-container *ngIf="user.role === 'admin'">
+
+
+ crea calendario
+
+ migliora stile

@@ -1,0 +1,57 @@
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Occupa l'intera altezza della finestra */
+    background-color: #f0f2f5; /* Colore di sfondo leggero */
+  }
+  
+  .form-container {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px; /* Larghezza massima del modulo */
+  }
+  
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  mat-form-field {
+    width: 100%; /* Assicura che i campi di input occupino tutta la larghezza */
+    margin-bottom: 20px; /* Spaziatura tra i campi */
+  }
+  
+  button {
+    width: 100%; /* Pulsante a larghezza piena */
+    margin-top: 10px; /* Spaziatura sopra il pulsante */
+  }
+  
+  .message-container {
+    text-align: center; /* Centra i messaggi di successo e errore */
+    margin-top: 15px;
+  }
+  
+  .success-message {
+    color: #28a745; /* Colore verde per il messaggio di successo */
+  }
+  
+  .error-message {
+    color: #dc3545; /* Colore rosso per il messaggio di errore */
+  }
+  
+  .login-link {
+    display: block;
+    text-align: center;
+    margin-top: 15px;
+    color: #007bff; /* Colore blu per il link */
+    text-decoration: none;
+  }
+  
+  .login-link:hover {
+    text-decoration: underline; /* Sottolinea il link al passaggio del mouse */
+  }

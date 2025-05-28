@@ -1,0 +1,204 @@
+<div class="calendar-container">
+  <div class="header">
+    <div class="left-section">
+      <h2>BENVENUTO CUTER GABRIEL</h2>
+      <div class="date-navigation">
+        <button mat-icon-button (click)="navigatePeriod(-1)">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <div class="current-date" (click)="showDatePicker = true">
+          {{ viewDate | date:'EEEE d MMMM y' | uppercase }}
+        </div>
+        <button mat-icon-button (click)="navigatePeriod(1)">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <mat-form-field *ngIf="showDatePicker">
+          <input matInput
+                 [matDatepicker]="datePicker"
+                 [(ngModel)]="viewDate"
+                 (dateChange)="onDateSelected($event.value)"
+                 placeholder="GG/MM/AAAA">
+          <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+          <mat-datepicker #datePicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="right-section">
+      <button mat-raised-button color="primary" (click)="goToToday()" class="today-button">
+        OGGI
+      </button>
+      <div class="view-selector">
+        <button mat-button
+                *ngFor="let calView of calendarViews"
+                [class.active]="calView === view"
+                (click)="setView(calView)">
+          {{ calView | uppercase }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="calendar-body">
+    <div [ngSwitch]="view">
+
+      <!-- VISTA MENSILE -->
+      <div *ngSwitchCase="CalendarView.Month" class="month-view">
+        <div class="days-header">
+          <div *ngFor="let dayLabel of weekDays" class="day-header">
+            {{ dayLabel }}
+          </div>
+        </div>
+        <div class="weeks-container">
+          <div *ngFor="let week of daysInMonth" class="week-row">
+            <div *ngFor="let day of week"
+                 class="day-cell"
+                 [class.current-month]="isSameMonth(day, viewDate)"
+                 [class.today]="isToday(day)"
+                 [class.blocked]="isBlocked(day)">
+
+              <div class="day-content">
+                <div class="day-number" (click)="viewDay(day)">
+                  {{ day | date:'d' }}
+                </div>
+                <button *ngIf="!isBlocked(day)"
+                        class="block-btn"
+                        (click)="openBlockConfirmation($event, day)">
+                  Blocca
+                </button>
+                <button *ngIf="isBlocked(day)"
+                        class="unblock-btn"
+                        (click)="openUnblockConfirmation($event, day)">
+                  Sblocca
+                </button>
+
+                <div class="events">
+                  <div *ngFor="let event of getEventsForDay(day)"
+                       class="event-dot"
+                       [style.backgroundColor]="event.color.primary">
+                    <div class="event-details">
+                      <h4>{{ event.meta.nome }} {{ event.meta.cognome }}</h4>
+                      <p>Posti: {{ event.meta.posti }}</p>
+                      <p *ngIf="event.meta.menu?.length">
+                        Menu: {{ event.meta.menu.join(', ') }}
+                      </p>
+                      <p *ngIf="event.meta.note">
+                        Note: {{ event.meta.note }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA SETTIMANALE -->
+      <div *ngSwitchCase="CalendarView.Week" class="week-view">
+        <div class="week-range-header">
+          {{ weekRange }}
+        </div>
+        <div class="days-grid">
+          <div *ngFor="let day of daysInWeek"
+               class="day-cell"
+               [class.current-week]="isSameWeek(day, viewDate)"
+               [class.today]="isToday(day)"
+               [class.blocked]="isBlocked(day)">
+
+            <div class="day-content">
+              <div class="day-number" (click)="viewDay(day)">
+                {{ day | date:'d' }}
+              </div>
+              <button *ngIf="!isBlocked(day)"
+                      class="block-btn"
+                      (click)="openBlockConfirmation($event, day)">
+                Blocca
+              </button>
+              <button *ngIf="isBlocked(day)"
+                      class="unblock-btn"
+                      (click)="openUnblockConfirmation($event, day)">
+                Sblocca
+              </button>
+
+              <div class="events">
+                <div *ngFor="let event of getEventsForDay(day)"
+                     class="event-dot"
+                     [style.backgroundColor]="event.color.primary">
+                  <div class="event-details">
+                    <h4>{{ event.meta.nome }} {{ event.meta.cognome }}</h4>
+                    <p>Posti: {{ event.meta.posti }}</p>
+                    <p *ngIf="event.meta.menu?.length">
+                      Menu: {{ event.meta.menu.join(', ') }}
+                    </p>
+                    <p *ngIf="event.meta.note">
+                      Note: {{ event.meta.note }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA GIORNALIERA -->
+      <div *ngSwitchCase="CalendarView.Day" class="day-view">
+        <div class="day-header">
+          <h3>{{ viewDate | date:'EEEE d MMMM y' | uppercase }}</h3>
+        </div>
+        <div class="timeline-container">
+          <div class="time-column">
+            <div *ngFor="let slot of timeSlots" class="time-slot">
+              <div class="time-label">{{ slot.label }}</div>
+              <div class="time-line"></div>
+            </div>
+          </div>
+          <div class="events-column">
+            <div class="events-container">
+              <div *ngFor="let event of getEventsForDay(viewDate)"
+                   class="event-card"
+                   [style.top.px]="calculateTopPosition(event)"
+                   [style.height.px]="calculateEventHeight(event)"
+                   [style.--total-overlaps]="event.meta.totalOverlaps"
+                   [style.--overlap-order]="event.meta.overlapOrder">
+                <div class="event-main-info">
+                  <div class="event-title">
+                    {{ event.meta.nome }} {{ event.meta.cognome }}
+                  </div>
+                  <div class="event-subtitle">
+                    Posti: {{ event.meta.posti }}
+                    <span class="event-time">
+                      ({{ event.start | date:'HH:mm' }} - {{ event.end | date:'HH:mm' }})
+                    </span>
+                  </div>
+                </div>
+                <div class="event-details-popup">
+                  <h4>Dettagli Prenotazione</h4>
+                  <div class="detail-item">
+                    <mat-icon>person</mat-icon>
+                    {{ event.meta.nome }} {{ event.meta.cognome }}
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>group</mat-icon>
+                    Posti: {{ event.meta.posti }}
+                  </div>
+                  <div *ngIf="event.meta.menu?.length" class="detail-item">
+                    <mat-icon>restaurant_menu</mat-icon>
+                    Menu: {{ event.meta.menu.join(', ') }}
+                  </div>
+                  <div *ngIf="event.meta.note" class="detail-item">
+                    <mat-icon>notes</mat-icon>
+                    {{ event.meta.note }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- fine ngSwitch -->
+  </div>   <!-- fine calendar-body -->
+</div>     <!-- fine calendar-container -->

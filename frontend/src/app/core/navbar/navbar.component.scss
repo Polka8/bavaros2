@@ -1,0 +1,39 @@
+::host {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    height: 64px;
+    
+    mat-toolbar {
+      height: 100%;
+      max-width: 1600px; // Mantiene il contenuto centrato ma espanso
+      margin: 0 auto;
+      padding: 0 20px;
+      
+      .spacer {
+        flex: 1 1 auto;
+      }
+    }
+  }
+    
+    button {
+      margin: 0 8px;
+      
+      mat-icon {
+        margin-right: 8px;
+      }
+    }
+  
+  
+  ::ng-deep .mat-menu-panel {
+    min-width: 200px;
+    border-radius: 8px !important;
+    margin-top: 8px;
+    
+    .mat-menu-item {
+      mat-icon {
+        margin-right: 16px;
+      }
+    }
+  }
