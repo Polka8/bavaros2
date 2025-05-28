@@ -6,3 +6,4 @@ cryptography
 Flask-JWT-Extended
 flask-migrate
 Flask-Mail
+python-dotenv

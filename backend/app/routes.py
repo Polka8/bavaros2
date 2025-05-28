@@ -172,7 +172,7 @@ def init_routes(app):
             db.session.add(notifica)
             db.session.commit()
             try:
-                admin_email = "admin@example.com"  # Sostituisci con la tua
+                admin_email = os.getenv("ADMIN_EMAIL") 
                 msg = Message(
                     subject="Nuova prenotazione ricevuta",
                     recipients=[admin_email],
@@ -185,7 +185,25 @@ def init_routes(app):
                         f"Saluti,\nIl tuo sistema di prenotazioni."
                     )
                 )
+                print(f"Invio email a: {admin_email}")
+                print("Contenuto:", msg.body)
                 mail.send(msg)
+                try:
+                    msg_cliente = Message(
+                        subject="Conferma Prenotazione - Bavaros",
+                        recipients=[user.email],
+                        body=(
+                            f"Ciao {user.nome},\n\n"
+                            f"La tua prenotazione è stata confermata!\n\n"
+                            f"📅 Data: {data_prenotata.strftime('%d/%m/%Y %H:%M')}\n"
+                            f"👥 Numero di posti: {num_posti}\n\n"
+                            f"Grazie per aver scelto Bavaros!\n"
+                            f"A presto!"
+                        )
+                    )
+                    mail.send(msg_cliente)
+                except Exception as e:
+                    print(f"Errore nell'invio dell'email al cliente: {str(e)}")
             except Exception as e:
                 print(f"Errore nell'invio dell'email: {str(e)}")
                 return jsonify({

@@ -7,6 +7,8 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_HOST=db
+    env_file:
+      - .env
     volumes:
       - ./backend:/app
     depends_on:
@@ -51,6 +53,8 @@ services:
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
+      PMA_ABSOLUTE_URI: http://localhost:3307/
+      COOKIE_SECURE: false
     depends_on:
       - db
 
