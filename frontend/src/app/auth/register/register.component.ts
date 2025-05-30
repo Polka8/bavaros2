@@ -23,17 +23,17 @@ import { AuthService } from '../../shared/services/auth.service';
       <mat-form-field>
         <mat-label>Nome</mat-label>
         <input matInput formControlName="nome">
-        @if (registerForm.get('nome')?.hasError('required')) {
-          <mat-error>Campo obbligatorio</mat-error>
-        }
+        <mat-error *ngIf="registerForm.get('nome')?.hasError('required')">
+          Campo obbligatorio
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field>
         <mat-label>Cognome</mat-label>
         <input matInput formControlName="cognome">
-        @if (registerForm.get('cognome')?.hasError('required')) {
-          <mat-error>Campo obbligatorio</mat-error>
-        }
+        <mat-error *ngIf="registerForm.get('cognome')?.hasError('required')">
+          Campo obbligatorio
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field>
@@ -43,22 +43,26 @@ import { AuthService } from '../../shared/services/auth.service';
           formControlName="email"
           (blur)="updateEmailError()"
           type="email">
-        @if (errorMessage()) {
-          <mat-error>{{ errorMessage() }}</mat-error>
-        }
+        <mat-error *ngIf="errorMessage()">
+          {{ errorMessage() }}
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field>
         <mat-label>Password</mat-label>
         <input 
           matInput 
-          formControlName="password" 
-          type="password">
-        @if (registerForm.get('password')?.errors) {
-          <mat-error>
-            Minimo 8 caratteri con lettere e numeri
-          </mat-error>
-        }
+          [type]="hidePassword ? 'password' : 'text'" 
+          formControlName="password">
+        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()">
+          <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="registerForm.get('password')?.hasError('required')">
+          Campo obbligatorio
+        </mat-error>
+        <mat-error *ngIf="registerForm.get('password')?.hasError('pattern')">
+          La password deve contenere almeno una maiuscola, una minuscola e un carattere speciale().
+        </mat-error>
       </mat-form-field>
 
       <button 
@@ -70,12 +74,8 @@ import { AuthService } from '../../shared/services/auth.service';
       </button>
 
       <div class="message-container">
-        @if (successMessage) {
-          <div class="success-message">{{ successMessage }}</div>
-        }
-        @if (errorMessage()) {
-          <div class="error-message">{{ errorMessage() }}</div>
-        }
+        <div *ngIf="successMessage">{{ successMessage }}</div>
+        <div *ngIf="errorMessage()">{{ errorMessage() }}</div>
       </div>
 
       <a routerLink="/login" class="login-link">Hai già un account? Accedi</a>
@@ -90,19 +90,24 @@ export class RegisterComponent {
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [
       Validators.required,
-      Validators.minLength(8),
-      Validators.pattern(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/)
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+[\]{};':"\\|,.<>?]).{8,}$/)
+
     ])
   });
 
   loading = false;
   successMessage = '';
   errorMessage = signal('');
+  hidePassword = true; // Aggiungi questa proprietà
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
+
+  togglePasswordVisibility() {
+    this.hidePassword = !this.hidePassword; // Cambia la visibilità della password
+  }
 
   updateEmailError() {
     const emailControl = this.registerForm.get('email');
@@ -133,7 +138,6 @@ export class RegisterComponent {
           setTimeout(() => this.router.navigate(['/login']), 2000);
         },
         error: (err) => {
-          // Se il backend restituisce error.error.message, lo visualizziamo
           const msg = err.error && err.error.message ? err.error.message : 'Errore durante la registrazione';
           this.errorMessage.set(msg);
           this.successMessage = '';
@@ -147,5 +151,4 @@ export class RegisterComponent {
       });
     }
   }
-  
 }

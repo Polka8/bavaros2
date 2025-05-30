@@ -28,14 +28,20 @@ import { AuthService } from '../../shared/services/auth.service';
         </mat-error>
         <mat-error *ngIf="loginForm.get('email')?.hasError('email')">
           Formato email non valido
-</mat-error>
+        </mat-error>
       </mat-form-field>
 
       <mat-form-field>
         <mat-label>Password</mat-label>
-        <input matInput formControlName="password" type="password">
+        <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password">
+        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()">
+          <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+        </button>
         <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
           Campo obbligatorio
+        </mat-error>
+        <mat-error *ngIf="loginForm.get('password')?.hasError('pattern')">
+          La password deve contenere almeno una maiuscola, una minuscola e un carattere speciale.
         </mat-error>
       </mat-form-field>
 
@@ -61,16 +67,25 @@ import { AuthService } from '../../shared/services/auth.service';
 export class LoginComponent {
   loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
-    password: new FormControl('', [Validators.required])
+    password: new FormControl('', [
+      Validators.required,
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+[\]{};':"\\|,.<>?]).{8,}$/)
+
+    ])
   });
 
   loading = false;
   errorMessage = signal('');
+  hidePassword = true; // Variabile per gestire la visibilità della password
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
+
+  togglePasswordVisibility() {
+    this.hidePassword = !this.hidePassword; // Cambia la visibilità della password
+  }
 
   onSubmit() {
     if (this.loginForm.valid) {
@@ -99,5 +114,4 @@ export class LoginComponent {
       });
     }
   }
-  
 }

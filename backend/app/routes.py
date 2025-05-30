@@ -1,4 +1,3 @@
-from email.message import Message
 from flask import jsonify, request # type: ignore
 from .models import (
     BlockedDay, Notifica, db, User, RuoloEnum, Prenotazione,
@@ -11,6 +10,7 @@ import re
 import json
 from flask_cors import CORS  # type: ignore # gestione centralizzata del CORS
 from app import mail
+from flask_mail import Message
 
 def init_routes(app):
     # Abilita CORS per tutti gli endpoint /api/*, specificando l'origine consentita
@@ -110,9 +110,16 @@ def init_routes(app):
             "creato_il": user.creato_il.isoformat()
         }), 200
 
-    @app.route('/api/prenotazioni', methods=['POST'])
+    @app.route('/api/prenotazioni', methods=['POST', 'OPTIONS'])
     @jwt_required()
     def crea_prenotazione():
+        if request.method == 'OPTIONS':
+            response = jsonify({})
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:4200')
+            response.headers.add('Access-Control-Allow-Methods', 'DELETE, GET, POST, OPTIONS')
+            response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+            return response, 200
+         
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
         data = request.get_json()
@@ -901,5 +908,5 @@ def init_routes(app):
                 except Exception as e:
                     db.session.rollback()
                     return jsonify({"message": f"Errore nell'eliminazione del piatto: {str(e)}"}), 500
-
-
+                
+  
