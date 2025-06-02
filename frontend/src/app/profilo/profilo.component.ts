@@ -224,6 +224,9 @@ export class ProfileComponent implements OnInit {
   }
 
   cancelReservation(prenotazioneId: number): void {
+    const conferma = window.confirm('Sei sicuro di voler annullare questa prenotazione?');
+    if (!conferma) return;
+
     this.prenotazioniService.cancelPrenotazione(prenotazioneId).subscribe({
       next: response => {
         console.log('Prenotazione annullata', response);
@@ -232,6 +235,7 @@ export class ProfileComponent implements OnInit {
       error: err => console.error('Errore nell\'annullamento della prenotazione', err)
     });
   }
+
 
   getPiattiOrdinati(prenotazione: any): string {
     if (prenotazione.piatti && prenotazione.piatti.length > 0) {

@@ -116,10 +116,10 @@ def init_routes(app):
         if request.method == 'OPTIONS':
             response = jsonify({})
             response.headers.add('Access-Control-Allow-Origin', 'http://localhost:4200')
-            response.headers.add('Access-Control-Allow-Methods', 'DELETE, GET, POST, OPTIONS')
+            response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
             response.headers.add('Access-Control-Allow-Headers', 'Authorization, Content-Type')
             return response, 200
-         
+        
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
         data = request.get_json()
@@ -171,6 +171,7 @@ def init_routes(app):
             db.session.add(nuova_prenotazione)
             db.session.commit()
 
+            # Invia notifica all'admin
             notifica = Notifica(
                 tipo="nuova_prenotazione",
                 messaggio=f"Nuova prenotazione da {user.nome} {user.cognome} per {num_posti} posti il {data_prenotata}",
@@ -178,6 +179,8 @@ def init_routes(app):
             )
             db.session.add(notifica)
             db.session.commit()
+
+            # Invia email all'admin
             try:
                 admin_email = os.getenv("ADMIN_EMAIL") 
                 msg = Message(
@@ -192,34 +195,36 @@ def init_routes(app):
                         f"Saluti,\nIl tuo sistema di prenotazioni."
                     )
                 )
-                print(f"Invio email a: {admin_email}")
-                print("Contenuto:", msg.body)
                 mail.send(msg)
-                try:
-                    msg_cliente = Message(
-                        subject="Conferma Prenotazione - Bavaros",
-                        recipients=[user.email],
-                        body=(
-                            f"Ciao {user.nome},\n\n"
-                            f"La tua prenotazione è stata confermata!\n\n"
-                            f"📅 Data: {data_prenotata.strftime('%d/%m/%Y %H:%M')}\n"
-                            f"👥 Numero di posti: {num_posti}\n\n"
-                            f"Grazie per aver scelto Bavaros!\n"
-                            f"A presto!"
-                        )
+
+                # Invia email al cliente
+                msg_cliente = Message(
+                    subject="Conferma Prenotazione - Bavaros",
+                    recipients=[user.email],
+                    body=(
+                        f"Ciao {user.nome},\n\n"
+                        f"La tua prenotazione è stata confermata!\n\n"
+                        f"📅 Data: {data_prenotata.strftime('%d/%m/%Y %H:%M')}\n"
+                        f"👥 Numero di posti: {num_posti}\n\n"
+                        f"Grazie per aver scelto Bavaros!\n"
+                        f"A presto!"
                     )
-                    mail.send(msg_cliente)
-                except Exception as e:
-                    print(f"Errore nell'invio dell'email al cliente: {str(e)}")
+                )
+                mail.send(msg_cliente)
+
             except Exception as e:
                 print(f"Errore nell'invio dell'email: {str(e)}")
-                return jsonify({
-                            "message": "Prenotazione creata con successo",
-                            "prenotazione_id": nuova_prenotazione.id_prenotazione
-                        }), 201
+
+            return jsonify({
+                "message": "Prenotazione creata con successo",
+                "prenotazione_id": nuova_prenotazione.id_prenotazione
+            }), 201
+
         except Exception as e:
             db.session.rollback()
             return jsonify({"message": f"Errore server: {str(e)}"}), 500
+
+        
 
     @app.route('/api/prenotazioni/menu', methods=['POST'])
     @jwt_required()
@@ -274,45 +279,105 @@ def init_routes(app):
             except Exception:
                 return jsonify({"message": "Quantità non valida per un piatto"}), 400
 
-        try:
-            prenotazione = Prenotazione(
-                data_prenotata=data_prenotata,
-                stato="attiva",
-                id_utente=user_id,
-                data_creazione=datetime.utcnow(),
-                note_aggiuntive=data.get('note_aggiuntive', ''),
-                numero_posti=num_posti
-            )
-            db.session.add(prenotazione)
-            db.session.flush()  # per ottenere prenotazione.id_prenotazione
-
-            # Inserisci i dettagli dei piatti
-            for item in data['piatti']:
-                dettaglio = DettagliPrenotazione(
-                    fk_prenotazione=prenotazione.id_prenotazione,
-                    fk_piatto=item['fk_piatto'],
-                    quantita=int(item['quantita'])
+            try:
+                prenotazione = Prenotazione(
+                    data_prenotata=data_prenotata,
+                    stato="attiva",
+                    id_utente=user_id,
+                    data_creazione=datetime.utcnow(),
+                    note_aggiuntive=data.get('note_aggiuntive', ''),
+                    numero_posti=num_posti
                 )
-                db.session.add(dettaglio)
+                db.session.add(prenotazione)
+                db.session.flush()
 
-            # Crea la notifica
-            piatti_nomi = [Piatto.query.get(item['fk_piatto']).nome for item in data['piatti']]
-            notifica = Notifica(
-                tipo="nuova_prenotazione_con_menu",
-                messaggio=f"Nuova prenotazione con menù da {user.nome} {user.cognome} per {num_posti} posti il {data_prenotata}. Piatti: {', '.join(piatti_nomi)}",
-                id_prenotazione=prenotazione.id_prenotazione
-            )
-            db.session.add(notifica)
-            db.session.commit()
+                # Inserisci i dettagli dei piatti e raccogli le informazioni
+                piatti_info = []
+                for item in data['piatti']:
+                    piatto = Piatto.query.get(item['fk_piatto'])
+                    dettaglio = DettagliPrenotazione(
+                        fk_prenotazione=prenotazione.id_prenotazione,
+                        fk_piatto=item['fk_piatto'],
+                        quantita=int(item['quantita'])
+                    )
+                    db.session.add(dettaglio)
+                    piatti_info.append({
+                        'nome': piatto.nome,
+                        'quantita': item['quantita'],
+                        'prezzo': piatto.prezzo
+                    })
 
-            return jsonify({
-                "message": "Prenotazione con menu creata con successo",
-                "prenotazione_id": prenotazione.id_prenotazione
-            }), 201
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"message": f"Errore server: {str(e)}"}), 500
+                # Calcola il totale
+                totale = sum(p['prezzo'] * p['quantita'] for p in piatti_info)
 
+                # Crea la notifica
+                piatti_nomi = [p['nome'] for p in piatti_info]
+                notifica = Notifica(
+                    tipo="nuova_prenotazione_con_menu",
+                    messaggio=f"Nuova prenotazione con menù da {user.nome} {user.cognome} per {num_posti} posti il {data_prenotata}. Piatti: {', '.join(piatti_nomi)}",
+                    id_prenotazione=prenotazione.id_prenotazione
+                )
+                db.session.add(notifica)
+
+                # Invia email all'admin
+                try:
+                    admin_email = os.getenv("ADMIN_EMAIL")
+                    
+                    # Costruisci il corpo dell'email con i dettagli dei piatti
+                    piatti_details = "\n".join(
+                        [f"- {p['quantita']}x {p['nome']} (€{p['prezzo']} cad.)" for p in piatti_info]
+                    )
+                    
+                    msg = Message(
+                        subject="Nuova prenotazione con menu ricevuta",
+                        recipients=[admin_email],
+                        body=(
+                            f"Ciao Admin,\n\n"
+                            f"Hai ricevuto una nuova prenotazione con menu da {user.nome} {user.cognome}.\n"
+                            f"📅 Data: {data_prenotata.strftime('%d/%m/%Y %H:%M')}\n"
+                            f"👥 Numero posti: {num_posti}\n"
+                            f"📝 Note: {data.get('note_aggiuntive', 'Nessuna nota')}\n\n"
+                            f"🍽️ Menu selezionato:\n"
+                            f"{piatti_details}\n\n"
+                            f"💶 Totale: €{totale:.2f}\n\n"
+                            f"Saluti,\nIl tuo sistema di prenotazioni."
+                        )
+                    )
+                    mail.send(msg)
+
+                    # Invia email al cliente
+                    msg_cliente = Message(
+                        subject="Conferma Prenotazione con Menu - Bavaros",
+                        recipients=[user.email],
+                        body=(
+                            f"Ciao {user.nome},\n\n"
+                            f"La tua prenotazione con menu è stata confermata!\n\n"
+                            f"📅 Data: {data_prenotata.strftime('%d/%m/%Y %H:%M')}\n"
+                            f"👥 Numero di posti: {num_posti}\n"
+                            f"📝 Note: {data.get('note_aggiuntive', 'Nessuna nota')}\n\n"
+                            f"🍽️ Il tuo menu:\n"
+                            f"{piatti_details}\n\n"
+                            f"💶 Totale: €{totale:.2f}\n\n"
+                            f"Grazie per aver scelto Bavaros!\n"
+                            f"A presto!"
+                        )
+                    )
+                    mail.send(msg_cliente)
+
+                except Exception as e:
+                    print(f"Errore nell'invio dell'email: {str(e)}")
+
+                db.session.commit()
+
+                return jsonify({
+                    "message": "Prenotazione con menu creata con successo",
+                    "prenotazione_id": prenotazione.id_prenotazione
+                }), 201
+
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({"message": f"Errore server: {str(e)}"}), 500
+            
     @app.route('/api/prenotazioni/storico/<int:user_id>', methods=['GET'])
     @jwt_required()
     def storico_prenotazioni(user_id):
@@ -555,10 +620,45 @@ def init_routes(app):
             prenotazione.data_annullamento = datetime.utcnow()
             notifica = Notifica(
                 tipo="annullamento",
-                messaggio=f"Prenotazione di {user.nome} {user.cognome} per il {prenotazione.data_prenotata} annullata",
+                messaggio=f"Prenotazione di {user.nome} {user.cognome} per il {prenotazione.data_prenotata.strftime('%d/%m/%Y %H:%M')} annullata",
                 id_prenotazione=prenotazione.id_prenotazione
             )
             db.session.add(notifica)
+
+            # ✉️ Invia email di notifica all'admin e al cliente
+            try:
+                admin_email = os.getenv("ADMIN_EMAIL")
+
+                # Email per l'admin
+                msg_admin = Message(
+                    subject="Annullamento Prenotazione - Bavaros",
+                    recipients=[admin_email],
+                    body=(
+                        f"Ciao Admin,\n\n"
+                        f"La seguente prenotazione è stata annullata:\n\n"
+                        f"👤 Utente: {user.nome} {user.cognome}\n"
+                        f"📅 Data prenotata: {prenotazione.data_prenotata.strftime('%d/%m/%Y %H:%M')}\n\n"
+                        f"Saluti,\nIl tuo sistema di prenotazioni."
+                    )
+                )
+                mail.send(msg_admin)
+
+                # Email per il cliente
+                msg_cliente = Message(
+                    subject="Conferma Annullamento Prenotazione - Bavaros",
+                    recipients=[user.email],
+                    body=(
+                        f"Ciao {user.nome},\n\n"
+                        f"La tua prenotazione per il giorno {prenotazione.data_prenotata.strftime('%d/%m/%Y %H:%M')} è stata annullata con successo.\n\n"
+                        f"Se non sei stato tu ad annullare la prenotazione, contattaci subito.\n\n"
+                        f"Grazie,\nIl team di Bavaros."
+                    )
+                )
+                mail.send(msg_cliente)
+
+            except Exception as e:
+                print(f"Errore durante l'invio dell'email: {str(e)}")
+
             db.session.commit()
 
             response = jsonify({"message": "Prenotazione annullata"})
@@ -567,6 +667,7 @@ def init_routes(app):
         except Exception as e:
             db.session.rollback()
             return jsonify({"message": f"Errore: {str(e)}"}), 500
+
 
     @app.route('/api/notifiche', methods=['GET', 'OPTIONS'])
     @jwt_required(optional=True)
