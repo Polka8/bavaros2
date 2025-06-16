@@ -25,7 +25,7 @@ Realizzato come parte di un esame fullstack, il progetto è sviluppato con tecno
 
 ## Video dimostrativo
 
-🎥 Il video di demo è disponibile qui: [LINK_AL_VIDEO]
+🎥 Il video di demo è disponibile qui: https://www.linkedin.com/in/gabrielcuter/
 
 ## ⚠️ Avviso Legale
 
